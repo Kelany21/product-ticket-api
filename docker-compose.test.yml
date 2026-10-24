@@ -1,0 +1,32 @@
+# Ephemeral Postgres + Redis used only to run the automated test suite
+# (`npm test`) against real infrastructure instead of mocks. Exposed on
+# different host ports than docker-compose.yml so both can run side by side.
+# `name` keeps this on its own Compose project so it never collides with (or
+# gets recreated by) `docker-compose up` from docker-compose.yml.
+name: product-ticket-api-test
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: product_ticket_api_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d product_ticket_api_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
